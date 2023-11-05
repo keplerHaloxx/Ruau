@@ -15,16 +15,17 @@ pub enum TokenType {
     RCurly,
     Identifier,
     Keyword,
+    Function,
     Unknown,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Token {
     pub(crate) token_type: TokenType,
     pub(crate) value: TokenValue,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum TokenValue {
     StrValue(String),
     IntValue(i32),
@@ -35,8 +36,21 @@ pub enum TokenValue {
     NoValue,
 }
 
+#[derive(Debug, PartialEq)]
+pub enum Keywords {
+    Fn,
+    If,
+    Let,
+    Else,
+    True,
+    False,
+}
+
 pub fn tokenize(input: &str) -> Vec<Token> {
-    let keywords: HashSet<&str> = ["if", "fn", "let", "else", "true", "false"].iter().cloned().collect();
+    let keywords: HashSet<&str> = ["if", "fn", "let", "else", "true", "false"]
+        .iter()
+        .cloned()
+        .collect();
     let mut tokens = Vec::new();
     let mut current_token = String::new();
     let mut in_string = false;
@@ -91,6 +105,7 @@ pub fn tokenize(input: &str) -> Vec<Token> {
                 }
                 in_string = !in_string;
             }
+            '\n' => {}
             _ => {
                 current_token.push(c);
             }
@@ -136,10 +151,18 @@ pub fn parse_token(token: &str, keywords: &HashSet<&str>) -> Token {
                             token_type: TokenType::Float,
                             value: TokenValue::FloatValue(value),
                         },
-                        Err(_) => Token {
-                            token_type: TokenType::Identifier,
-                            value: TokenValue::Identifier(token.to_string()),
-                        },
+                        Err(_) => {
+                            if token.contains("!") {
+                                return Token {
+                                    token_type: TokenType::Function,
+                                    value: TokenValue::Identifier(token.to_string()),
+                                };
+                            }
+                            Token {
+                                token_type: TokenType::Identifier,
+                                value: TokenValue::Identifier(token.to_string()),
+                            }
+                        }
                     },
                 }
             }
